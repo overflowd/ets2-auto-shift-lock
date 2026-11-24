@@ -14,14 +14,17 @@ enable_testing()
 add_executable(plugin_tests
     plugin/src/config_store.cpp
     plugin/src/shift_lock_engine.cpp
+    plugin/src/audio_alert.cpp
     tests/plugin/test_main.cpp
     tests/plugin/test_config_store.cpp
     tests/plugin/test_shift_lock_engine.cpp
+    tests/plugin/test_audio_alert.cpp
 )
 target_include_directories(plugin_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/plugin/include
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/plugin
 )
+target_link_libraries(plugin_tests PRIVATE winmm user32)
 
 if(MINGW)
     target_link_options(plugin_tests PRIVATE -static-libgcc -static-libstdc++)
