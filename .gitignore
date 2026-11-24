@@ -1,0 +1,18 @@
+# Build outputs
+build/
+dist/
+out/
+
+# .NET outputs
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+
+# Superpowers scratch workspace
+.superpowers/
+
+# Local test artifacts
+*.log
+*.tmp
