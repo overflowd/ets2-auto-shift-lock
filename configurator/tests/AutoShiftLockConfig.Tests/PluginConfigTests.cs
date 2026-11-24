@@ -1,4 +1,5 @@
 using AutoShiftLockConfig.Models;
+using AutoShiftLockConfig.Services;
 using Xunit;
 
 namespace AutoShiftLockConfig.Tests;
@@ -93,5 +94,12 @@ public class PluginConfigTests
         Assert.Equal("kb:160", reparsed.ShiftUp.ToToken());
         Assert.Equal("kb:162", reparsed.ShiftDown.ToToken());
         Assert.Equal("xinput:0:RB", reparsed.GearD.ToToken());
+    }
+
+    [Fact]
+    public void DirectInputDataFormat_UsesDidfAbsAxisNotRelAxis()
+    {
+        // dinput.h: DIDF_ABSAXIS = 0x00000001, DIDF_RELAXIS = 0x00000002
+        Assert.Equal(0x00000001u, UniversalInputCapture.DidfAbsAxis);
     }
 }

@@ -36,6 +36,11 @@ public:
                                                            bool allow_capture,
                                                            uint64_t now_ms);
 
+    static bool is_current_process_foreground();
+    static bool should_reenumerate_dinput(bool missing_bound_guid,
+                                          bool any_device_unhealthy,
+                                          uint64_t now_ms,
+                                          uint64_t last_reenum_ms);
     static bool eval_pov_direction(uint32_t raw_pov_hundredths, PovDirection dir);
     static bool eval_xinput_button(const XINPUT_GAMEPAD& gp, std::string_view button_name);
     static std::string format_guid(const GUID& guid);
@@ -44,12 +49,12 @@ private:
     struct DiDevice {
         IDirectInputDevice8W* device = nullptr;
         std::string product_guid;
+        bool coop_set = false;
         bool state_valid = false;
         std::array<bool, 128> buttons{};
         std::array<uint32_t, 4> povs{0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu};
     };
 
-    static bool is_current_process_foreground();
     static BOOL CALLBACK enum_devices_cb(const void* instance_ptr, void* context);
 
     void enumerate_dinput_devices();

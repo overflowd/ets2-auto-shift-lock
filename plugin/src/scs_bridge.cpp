@@ -66,21 +66,25 @@ scs_result_t ScsBridge::init_telemetry(scs_u32_t version, const scs_telemetry_in
 
     const auto* vp = static_cast<const scs_telemetry_init_params_v100_t*>(params);
 
-    std::lock_guard<std::mutex> lock(mutex_);
-    log_fn_ = vp->common.log;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        log_fn_ = vp->common.log;
 
-    const std::filesystem::path plugin_dir = resolve_plugin_dir();
-    config_watcher_ = std::make_unique<ConfigWatcher>(plugin_dir / "ets2_auto_shift_lock.ini");
-    audio_alert_ = std::make_unique<AudioAlert>(plugin_dir);
-    config_ = PluginConfig{};
-    config_watcher_->reload_if_changed(config_);
-    last_config_check_ms_ = steady_now_ms();
+        const std::filesystem::path plugin_dir = resolve_plugin_dir();
+        config_watcher_ = std::make_unique<ConfigWatcher>(plugin_dir / "ets2_auto_shift_lock.ini");
+        audio_alert_ = std::make_unique<AudioAlert>(plugin_dir);
+        config_ = PluginConfig{};
+        config_watcher_->reload_if_changed(config_);
+        last_config_check_ms_ = steady_now_ms();
 
-    snapshot_ = TelemetrySnapshot{};
-    snapshot_.paused = true;
-    engine_.reset();
-    input_poller_.initialize(module_handle_);
+        snapshot_ = TelemetrySnapshot{};
+        snapshot_.paused = true;
+        snapshot_.focused = false;
+        engine_.reset();
+        input_poller_.initialize(module_handle_);
+    }
 
+    // Release mutex before SDK registration calls to prevent synchronous callback deadlocks
     if (vp->register_for_event(SCS_TELEMETRY_EVENT_configuration, &ScsBridge::on_configuration, this) != SCS_RESULT_ok ||
         vp->register_for_event(SCS_TELEMETRY_EVENT_paused, &ScsBridge::on_paused_or_started, this) != SCS_RESULT_ok ||
         vp->register_for_event(SCS_TELEMETRY_EVENT_started, &ScsBridge::on_paused_or_started, this) != SCS_RESULT_ok ||
@@ -129,9 +133,11 @@ scs_result_t ScsBridge::init_input(scs_u32_t version, const scs_input_init_param
 
     const auto* vp = static_cast<const scs_input_init_params_v100_t*>(params);
 
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (!log_fn_) {
-        log_fn_ = vp->common.log;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (!log_fn_) {
+            log_fn_ = vp->common.log;
+        }
     }
 
     scs_input_device_input_t inputs[2];
@@ -155,6 +161,7 @@ scs_result_t ScsBridge::init_input(scs_u32_t version, const scs_input_init_param
     device_info.input_active_callback = &ScsBridge::on_input_active;
     device_info.input_event_callback = &ScsBridge::on_input_event;
 
+    // Mutex unlocked during register_device so synchronous on_input_active cannot deadlock
     if (vp->register_device(&device_info) != SCS_RESULT_ok) {
         log_msg(SCS_LOG_TYPE_error, "[AutoShiftLock] Failed to register semantical input device.");
         return SCS_RESULT_generic_error;
@@ -226,7 +233,9 @@ SCSAPI_VOID ScsBridge::on_frame_end(scs_event_t, const void*, scs_context_t cont
         }
     }
 
+    self->snapshot_.focused = InputPoller::is_current_process_foreground();
     const bool allow_capture = !self->snapshot_.paused &&
+                               self->snapshot_.focused &&
                                (self->snapshot_.mode == ShifterMode::Automatic ||
                                 self->snapshot_.mode == ShifterMode::Manual);
     const auto edges = self->input_poller_.poll_pressed_edges(self->config_, allow_capture, now_ms);

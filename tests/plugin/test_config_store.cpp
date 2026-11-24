@@ -4,6 +4,7 @@
 #include "config_store.hpp"
 
 #include <chrono>
+#include <clocale>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -163,4 +164,22 @@ TEST_CASE(config_watcher_reloads_on_mtime_change_and_handles_missing_file) {
     CHECK_EQ(cfg.bindings[static_cast<size_t>(ShiftAction::ShiftUp)].vk_code, 162u);
 
     std::filesystem::remove(tmp_path, ec);
+}
+
+TEST_CASE(config_parses_dot_floats_even_under_comma_decimal_locale) {
+    const char* prev = std::setlocale(LC_NUMERIC, nullptr);
+    std::string saved_locale = prev ? prev : "C";
+
+    // Switch to a comma-decimal locale supported on Windows UCRT
+    const char* changed = std::setlocale(LC_NUMERIC, "tr-TR");
+    if (!changed) {
+        changed = std::setlocale(LC_NUMERIC, "de-DE");
+    }
+    CHECK(changed != nullptr);
+
+    const PluginConfig cfg = parse_ini_text("[thresholds]\nbrake_threshold = 0.35\nstop_speed_kmh = 0.75\n");
+    std::setlocale(LC_NUMERIC, saved_locale.c_str());
+
+    CHECK_NEAR(cfg.brake_threshold, 0.35f, 1e-4f);
+    CHECK_NEAR(cfg.stop_speed_kmh, 0.75f, 1e-4f);
 }

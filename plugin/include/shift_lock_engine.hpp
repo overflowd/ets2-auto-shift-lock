@@ -26,6 +26,7 @@ enum class GearRange : int8_t {
 struct TelemetrySnapshot {
     ShifterMode mode = ShifterMode::Unknown;
     bool paused = true;
+    bool focused = true;
     float input_brake = 0.0f;
     float effective_brake = 0.0f;
     float speed_mps = 0.0f;

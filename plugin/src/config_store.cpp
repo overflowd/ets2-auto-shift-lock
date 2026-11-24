@@ -73,18 +73,18 @@ bool parse_u32(std::string_view sv, uint32_t& out) {
 }
 
 bool parse_float(std::string_view sv, float& out) {
-    try {
-        std::string s(sv);
-        size_t idx = 0;
-        const float val = std::stof(s, &idx);
-        if (idx != s.size() || !std::isfinite(val)) {
-            return false;
-        }
-        out = val;
-        return true;
-    } catch (...) {
+    if (sv.empty()) {
         return false;
     }
+    std::istringstream iss{std::string(sv)};
+    iss.imbue(std::locale::classic());
+    float val = 0.0f;
+    iss >> val;
+    if (iss.fail() || !iss.eof() || !std::isfinite(val)) {
+        return false;
+    }
+    out = val;
+    return true;
 }
 
 bool is_valid_xinput_button(std::string_view btn) {

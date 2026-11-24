@@ -268,3 +268,26 @@ TEST_CASE(brake_source_effective_option_is_respected) {
     CHECK(out.gearup_active == true);
     CHECK(out.trigger_lock_audio == false);
 }
+
+TEST_CASE(focus_loss_without_pause_immediately_aborts_active_pulse_and_queue) {
+    // Review Focus #3 (Convoy / g_pause_on_alt_tab 0)
+    const PluginConfig cfg;
+    ShiftLockEngine engine;
+    auto t = make_auto_stopped(1, 1, 0.80f);
+    t.focused = true;
+
+    engine.on_action_pressed(ShiftAction::GearR, t, cfg, 1000);
+    CHECK(engine.tick(t, cfg, 1000).geardown_active == true);
+
+    // Lose foreground focus without game pausing
+    t.focused = false;
+    auto out = engine.tick(t, cfg, 1015);
+    CHECK(out.geardown_active == false);
+    CHECK(out.gearup_active == false);
+
+    // Regain focus later -> pending pulse 2 must NOT fire
+    t.focused = true;
+    out = engine.tick(t, cfg, 1150);
+    CHECK(out.geardown_active == false);
+    CHECK(out.gearup_active == false);
+}

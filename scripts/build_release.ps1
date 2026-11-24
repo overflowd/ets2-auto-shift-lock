@@ -33,6 +33,8 @@ if (-not (Test-Path "assets/lock_warning.wav")) {
 }
 
 Write-Host "==> 3. Running .NET 9 Configurator unit tests..."
+dotnet restore configurator/AutoShiftLockConfig.sln
+if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed" }
 dotnet test configurator/AutoShiftLockConfig.sln --configuration Release --no-restore
 if ($LASTEXITCODE -ne 0) { throw ".NET unit tests failed" }
 
@@ -40,7 +42,7 @@ Write-Host "==> 4. Publishing self-contained AutoShiftLockConfig.exe (win-x64)..
 $publishDir = Join-Path $repoRoot "build/publish_configurator"
 if (Test-Path $publishDir) { Remove-Item -Recurse -Force $publishDir }
 dotnet publish configurator/src/AutoShiftLockConfig/AutoShiftLockConfig.csproj `
-    -c Release -r win-x64 --self-contained true --no-restore `
+    -c Release -r win-x64 --self-contained true `
     -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
     -o $publishDir
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }

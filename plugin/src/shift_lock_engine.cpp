@@ -69,7 +69,7 @@ void ShiftLockEngine::on_action_pressed(ShiftAction action,
                                         const TelemetrySnapshot& t,
                                         const PluginConfig& cfg,
                                         uint64_t now_ms) {
-    if (t.paused) {
+    if (t.paused || !t.focused) {
         reset();
         return;
     }
@@ -137,7 +137,7 @@ EngineOutput ShiftLockEngine::tick(const TelemetrySnapshot& t,
                                    uint64_t now_ms) {
     EngineOutput out;
 
-    if (t.paused || (t.mode != ShifterMode::Automatic && t.mode != ShifterMode::Manual)) {
+    if (t.paused || !t.focused || (t.mode != ShifterMode::Automatic && t.mode != ShifterMode::Manual)) {
         reset();
         return out;
     }

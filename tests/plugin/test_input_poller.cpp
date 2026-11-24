@@ -70,3 +70,14 @@ TEST_CASE(guid_formatting_produces_uppercase_hyphenated_canonical_string) {
 
     CHECK_EQ(InputPoller::format_guid(g), std::string("12345678-9ABC-DEF0-1234-56789ABCDEF0"));
 }
+
+TEST_CASE(dinput_reenum_triggers_on_unhealthy_device_after_interval) {
+    // Healthy and present -> no re-enum
+    CHECK(InputPoller::should_reenumerate_dinput(false, false, 5000, 1000) == false);
+    // Unhealthy device (e.g. lost/unplugged/unacquired) triggers after 3000ms interval
+    CHECK(InputPoller::should_reenumerate_dinput(false, true, 2500, 1000) == false);
+    CHECK(InputPoller::should_reenumerate_dinput(false, true, 4000, 1000) == true);
+    // First-time missing or unhealthy (last_reenum_ms == 0) triggers immediately
+    CHECK(InputPoller::should_reenumerate_dinput(false, true, 100, 0) == true);
+    CHECK(InputPoller::should_reenumerate_dinput(true, false, 100, 0) == true);
+}

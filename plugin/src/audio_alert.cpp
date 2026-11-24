@@ -15,7 +15,19 @@ std::filesystem::path AudioAlert::resolve_wav_path(const std::string& sound_file
     if (sound_file.empty()) {
         return {};
     }
-    std::filesystem::path p(sound_file);
+    const int wide_len = MultiByteToWideChar(
+        CP_UTF8, 0, sound_file.data(), static_cast<int>(sound_file.size()), nullptr, 0);
+    std::wstring wide_name;
+    if (wide_len > 0) {
+        wide_name.resize(static_cast<size_t>(wide_len));
+        MultiByteToWideChar(
+            CP_UTF8, 0, sound_file.data(), static_cast<int>(sound_file.size()),
+            wide_name.data(), wide_len);
+    } else {
+        wide_name.assign(sound_file.begin(), sound_file.end());
+    }
+
+    std::filesystem::path p(wide_name);
     if (p.is_absolute()) {
         return p;
     }

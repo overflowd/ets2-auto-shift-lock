@@ -145,17 +145,29 @@ BOOL CALLBACK InputPoller::enum_devices_cb(const void* instance_ptr, void* conte
         return DIENUM_CONTINUE;
     }
 
-    if (HWND hwnd = find_main_process_window()) {
-        dev->SetCooperativeLevel(hwnd, DISCL_BACKGROUND | DISCL_NONEXCLUSIVE);
-    }
-
-    dev->Acquire();
-
     DiDevice entry;
     entry.device = dev;
     entry.product_guid = format_guid(inst->guidProduct);
+
+    if (HWND hwnd = find_main_process_window()) {
+        if (SUCCEEDED(dev->SetCooperativeLevel(hwnd, DISCL_BACKGROUND | DISCL_NONEXCLUSIVE))) {
+            entry.coop_set = true;
+            dev->Acquire();
+        }
+    }
+
     self->di_devices_.push_back(std::move(entry));
     return DIENUM_CONTINUE;
+}
+
+bool InputPoller::should_reenumerate_dinput(bool missing_bound_guid,
+                                            bool any_device_unhealthy,
+                                            uint64_t now_ms,
+                                            uint64_t last_reenum_ms) {
+    if (!missing_bound_guid && !any_device_unhealthy) {
+        return false;
+    }
+    return (last_reenum_ms == 0) || (now_ms >= last_reenum_ms + kReenumIntervalMs);
 }
 
 void InputPoller::enumerate_dinput_devices() {
@@ -186,7 +198,16 @@ void InputPoller::poll_dinput_states(uint64_t now_ms, const PluginConfig& cfg) {
         return;
     }
 
-    // Check if any configured DirectInput binding targets a GUID not currently attached
+    auto is_guid_bound = [&cfg](const std::string& guid) -> bool {
+        for (const auto& b : cfg.bindings) {
+            if ((b.source == BindingSource::DirectInputButton || b.source == BindingSource::DirectInputPov) &&
+                b.device_guid == guid) {
+                return true;
+            }
+        }
+        return false;
+    };
+
     bool needs_dinput = false;
     bool missing_bound_guid = false;
     for (const auto& b : cfg.bindings) {
@@ -209,24 +230,41 @@ void InputPoller::poll_dinput_states(uint64_t now_ms, const PluginConfig& cfg) {
         return;
     }
 
-    if (missing_bound_guid && (last_reenum_ms_ == 0 || now_ms >= last_reenum_ms_ + kReenumIntervalMs)) {
+    if (should_reenumerate_dinput(missing_bound_guid, false, now_ms, last_reenum_ms_)) {
         last_reenum_ms_ = now_ms;
         enumerate_dinput_devices();
     }
 
-    bool any_unplugged = false;
+    HWND main_hwnd = nullptr;
+    bool any_bound_unhealthy = false;
+
     for (auto& d : di_devices_) {
         d.state_valid = false;
-        if (!d.device) {
+        if (!d.device || !is_guid_bound(d.product_guid)) {
             continue;
         }
+
+        // Complete deferred SetCooperativeLevel once ETS2 creates its visible main window
+        if (!d.coop_set) {
+            if (!main_hwnd) {
+                main_hwnd = find_main_process_window();
+            }
+            if (!main_hwnd) {
+                continue;
+            }
+            if (FAILED(d.device->SetCooperativeLevel(main_hwnd, DISCL_BACKGROUND | DISCL_NONEXCLUSIVE))) {
+                any_bound_unhealthy = true;
+                continue;
+            }
+            d.coop_set = true;
+            d.device->Acquire();
+        }
+
         HRESULT hr = d.device->Poll();
         if (FAILED(hr)) {
-            hr = d.device->Acquire();
-            if (FAILED(hr)) {
-                if (hr == DIERR_UNPLUGGED) {
-                    any_unplugged = true;
-                }
+            const HRESULT acq_hr = d.device->Acquire();
+            if (FAILED(acq_hr)) {
+                any_bound_unhealthy = true;
                 continue;
             }
             d.device->Poll();
@@ -235,14 +273,15 @@ void InputPoller::poll_dinput_states(uint64_t now_ms, const PluginConfig& cfg) {
         DIJOYSTATE2 js{};
         hr = d.device->GetDeviceState(sizeof(js), &js);
         if (hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
-            if (SUCCEEDED(d.device->Acquire())) {
+            const HRESULT acq_hr = d.device->Acquire();
+            if (SUCCEEDED(acq_hr)) {
                 hr = d.device->GetDeviceState(sizeof(js), &js);
+            } else {
+                hr = acq_hr;
             }
         }
         if (FAILED(hr)) {
-            if (hr == DIERR_UNPLUGGED) {
-                any_unplugged = true;
-            }
+            any_bound_unhealthy = true;
             continue;
         }
 
@@ -255,7 +294,7 @@ void InputPoller::poll_dinput_states(uint64_t now_ms, const PluginConfig& cfg) {
         }
     }
 
-    if (any_unplugged && now_ms >= last_reenum_ms_ + kReenumIntervalMs) {
+    if (should_reenumerate_dinput(false, any_bound_unhealthy, now_ms, last_reenum_ms_)) {
         last_reenum_ms_ = now_ms;
         enumerate_dinput_devices();
     }

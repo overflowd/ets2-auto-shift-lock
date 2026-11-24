@@ -14,7 +14,7 @@ public sealed class UniversalInputCapture : IDisposable
     private const uint DiEdflAttachedOnly = 0x00000001;
     private const uint DisclBackground = 0x00000008;
     private const uint DisclNonExclusive = 0x00000002;
-    private const uint DidfAbsAxis = 0x00000002;
+    public const uint DidfAbsAxis = 0x00000001;
     private const uint DidftButton = 0x0000000C;
     private const uint DidftPov = 0x00000010;
     private const uint DidftAnyInstance = 0x00FFFF00;
