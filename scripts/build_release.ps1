@@ -61,6 +61,9 @@ Copy-Item (Join-Path $repoRoot "README.md") (Join-Path $stageDir "README.md")
 if (Test-Path (Join-Path $repoRoot "LICENSE")) {
     Copy-Item (Join-Path $repoRoot "LICENSE") (Join-Path $stageDir "LICENSE")
 }
+if (Test-Path (Join-Path $repoRoot "CHANGELOG.md")) {
+    Copy-Item (Join-Path $repoRoot "CHANGELOG.md") (Join-Path $stageDir "CHANGELOG.md")
+}
 
 # Use System.IO.Compression to avoid PowerShell Expand/Compress-Archive console Write-Progress issues
 Add-Type -AssemblyName System.IO.Compression.FileSystem
