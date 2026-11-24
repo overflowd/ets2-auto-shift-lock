@@ -1,6 +1,20 @@
-# ETS2 Auto Shift-Lock
+<p align="center">
+  <img src="assets/icon.png" alt="ETS2 Auto Shift-Lock" width="128" height="128" />
+</p>
 
-A native Windows (`x64`) plugin for **Euro Truck Simulator 2 (ETS2)** that enforces realistic automatic transmission **shift-lock** behavior in **Real Automatic** mode — allowing transitions between **`D`, `N`, and `R` only while pressing the brake pedal and completely stopped**.
+<h1 align="center">ETS2 Auto Shift-Lock</h1>
+
+<p align="center">
+  Native Windows (<code>x64</code>) plugin for <strong>Euro Truck Simulator 2</strong> enforcing realistic automatic transmission shift-lock — allowing <strong>D / N / R</strong> transitions only while braking and completely stopped.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/ETS2-SCS%20SDK%201.14-blue" alt="ETS2 SCS SDK 1.14" />
+  <img src="https://img.shields.io/badge/Platform-Windows%20x64-0078D6" alt="Windows x64" />
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License" />
+</p>
+
+---
 
 ## Features
 
@@ -12,7 +26,7 @@ A native Windows (`x64`) plugin for **Euro Truck Simulator 2 (ETS2)** that enfor
   - **Sequential (`manual`):** Unlocked passthrough for `Shift Up` / `Shift Down` so you never lose shifting when switching to a sequential truck.
   - **Simple Automatic (`arcade`) & H-Shifter (`hshifter`):** Automatically inactive.
 - **Audio feedback:** Plays a subtle mechanical lock warning sound (`lock_warning.wav`, customizable) whenever a shift is blocked.
-- **Live `.ini` hot-reload:** Changes saved from the configuration tool take effect without restarting ETS2.
+- **Dark & Light Mode configurator:** Includes `AutoShiftLockConfig.exe` with one-click installation, live press-to-bind capture, Dark/Light theme toggle, and hot-reloading `.ini` configuration.
 
 ## Installation (End Users)
 
@@ -61,7 +75,7 @@ Prerequisites: Windows x64, MinGW-w64 (UCRT x64) or MSVC, CMake, and `.NET 9 SDK
 powershell -ExecutionPolicy Bypass -File scripts/build_release.ps1
 ```
 
-This compiles `ets2_auto_shift_lock.dll`, runs all C++ (`27`) and `.NET` (`11`) unit tests, publishes a self-contained single-file `AutoShiftLockConfig.exe`, and packages everything into `dist/ets2-auto-shift-lock-v1.0.0-win-x64.zip`.
+This compiles `ets2_auto_shift_lock.dll`, runs all C++ and `.NET` unit tests, publishes a self-contained single-file `AutoShiftLockConfig.exe`, and packages everything into `dist/ets2-auto-shift-lock-v1.0.0-win-x64.zip`.
 
 ## License
 

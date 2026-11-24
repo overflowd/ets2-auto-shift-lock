@@ -12,27 +12,77 @@ public sealed class MainForm : Form
     private readonly Dictionary<string, (Label ValueLabel, Button BindBtn, Button ClearBtn)> _bindingRows = new();
     private readonly NumericUpDown _brakePctInput = new() { Minimum = 5, Maximum = 100, Value = 25, Width = 75 };
     private readonly NumericUpDown _stopSpeedInput = new() { Minimum = 0.0m, Maximum = 10.0m, DecimalPlaces = 2, Increment = 0.1m, Value = 0.50m, Width = 75 };
-    private readonly ComboBox _brakeSourceCombo = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 190 };
+    private readonly ComboBox _brakeSourceCombo = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 195 };
 
     private readonly CheckBox _audioEnabledCheck = new() { Text = "Play warning sound when shift is locked", AutoSize = true, Checked = true };
     private readonly TextBox _soundFileBox = new() { Text = "lock_warning.wav", Anchor = AnchorStyles.Left | AnchorStyles.Right };
     private readonly NumericUpDown _cooldownInput = new() { Minimum = 0, Maximum = 5000, Increment = 50, Value = 350, Width = 75 };
 
-    private readonly Label _statusBarLabel = new() { AutoSize = true, ForeColor = Color.DimGray };
+    private readonly Label _hintLabel = new()
+    {
+        Text = "Setup reminder: In ETS2 Options → Keys & Buttons, clear your existing Shift Up / Shift Down bindings, and set Transmission to 'Real Automatic'.",
+        AutoSize = true,
+        MaximumSize = new Size(540, 0),
+    };
+    private readonly Label _statusBarLabel = new() { AutoSize = true };
+    private readonly Button _themeToggleBtn = new() { AutoSize = true, Padding = new Padding(10, 3, 10, 3) };
+    private readonly Button _saveBtn = new() { Text = "Save Settings", AutoSize = true, Padding = new Padding(14, 6, 14, 6) };
 
     private PluginConfig _config = new();
+    private AppTheme _currentTheme;
+    private StatusKind _statusKind = StatusKind.Neutral;
+    private StatusKind _installKind = StatusKind.Warning;
     private CancellationTokenSource? _captureCts;
+
+    private enum StatusKind
+    {
+        Neutral,
+        Success,
+        Warning,
+        Danger,
+    }
 
     public MainForm()
     {
         Text = "ETS2 Auto Shift-Lock — Configuration";
-        MinimumSize = new Size(720, 620);
-        Size = new Size(760, 660);
+        MinimumSize = new Size(740, 660);
+        Size = new Size(780, 700);
         StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Segoe UI", 9.5f);
 
+        LoadAppIcon();
+        _currentTheme = ThemeManager.LoadPreference();
+
         BuildLayout();
         AutoDetectEts2AndLoad();
+        ApplyTheme();
+    }
+
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        ThemeManager.ApplyWindowTitleBarTheme(Handle, _currentTheme);
+    }
+
+    private void LoadAppIcon()
+    {
+        try
+        {
+            var exePath = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+            {
+                var extracted = Icon.ExtractAssociatedIcon(exePath);
+                if (extracted is not null)
+                {
+                    Icon = extracted;
+                    return;
+                }
+            }
+        }
+        catch
+        {
+            // Keep default icon if extraction fails
+        }
     }
 
     private void BuildLayout()
@@ -42,18 +92,53 @@ public sealed class MainForm : Form
             Dock = DockStyle.Fill,
             Padding = new Padding(14),
             ColumnCount = 1,
-            RowCount = 5,
+            RowCount = 6,
             AutoScroll = true,
         };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-        root.Controls.Add(BuildInstallGroup(), 0, 0);
-        root.Controls.Add(BuildBindingsGroup(), 0, 1);
-        root.Controls.Add(BuildThresholdsGroup(), 0, 2);
-        root.Controls.Add(BuildAudioGroup(), 0, 3);
-        root.Controls.Add(BuildFooterPanel(), 0, 4);
+        root.Controls.Add(BuildHeaderPanel(), 0, 0);
+        root.Controls.Add(BuildInstallGroup(), 0, 1);
+        root.Controls.Add(BuildBindingsGroup(), 0, 2);
+        root.Controls.Add(BuildThresholdsGroup(), 0, 3);
+        root.Controls.Add(BuildAudioGroup(), 0, 4);
+        root.Controls.Add(BuildFooterPanel(), 0, 5);
 
         Controls.Add(root);
+    }
+
+    private Panel BuildHeaderPanel()
+    {
+        var panel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            ColumnCount = 2,
+            RowCount = 1,
+            AutoSize = true,
+            Padding = new Padding(0, 0, 0, 8),
+        };
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+
+        var title = new Label
+        {
+            Text = "ETS2 Auto Shift-Lock",
+            Font = new Font("Segoe UI Semibold", 13.5f),
+            AutoSize = true,
+            Anchor = AnchorStyles.Left,
+            Padding = new Padding(0, 2, 0, 0),
+        };
+
+        _themeToggleBtn.Click += (_, _) =>
+        {
+            _currentTheme = _currentTheme == AppTheme.Dark ? AppTheme.Light : AppTheme.Dark;
+            ThemeManager.SavePreference(_currentTheme);
+            ApplyTheme();
+        };
+
+        panel.Controls.Add(title, 0, 0);
+        panel.Controls.Add(_themeToggleBtn, 1, 0);
+        return panel;
     }
 
     private GroupBox BuildInstallGroup()
@@ -135,7 +220,6 @@ public sealed class MainForm : Form
                 Text = "Unbound",
                 AutoSize = true,
                 Anchor = AnchorStyles.Left,
-                ForeColor = Color.DarkSlateBlue,
                 Padding = new Padding(0, 6, 0, 0),
             };
             var bindBtn = new Button { Text = "Press to Bind", AutoSize = true, Padding = new Padding(6, 2, 6, 2) };
@@ -250,31 +334,52 @@ public sealed class MainForm : Form
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-        var hintLabel = new Label
-        {
-            Text = "Setup reminder: In ETS2 Options → Keys & Buttons, clear your existing Shift Up / Shift Down bindings, and set Transmission to 'Real Automatic'.",
-            AutoSize = true,
-            MaximumSize = new Size(540, 0),
-            ForeColor = Color.FromArgb(60, 60, 60),
-        };
+        _saveBtn.Click += (_, _) => SaveCurrentConfig();
 
-        var saveBtn = new Button
-        {
-            Text = "Save Settings",
-            AutoSize = true,
-            Padding = new Padding(14, 6, 14, 6),
-            BackColor = Color.FromArgb(24, 118, 210),
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat,
-        };
-        saveBtn.Click += (_, _) => SaveCurrentConfig();
-
-        panel.Controls.Add(hintLabel, 0, 0);
-        panel.Controls.Add(saveBtn, 1, 0);
+        panel.Controls.Add(_hintLabel, 0, 0);
+        panel.Controls.Add(_saveBtn, 1, 0);
         panel.Controls.Add(_statusBarLabel, 0, 1);
         panel.SetColumnSpan(_statusBarLabel, 2);
 
         return panel;
+    }
+
+    private void ApplyTheme()
+    {
+        ThemeManager.ApplyToControlTree(this, _currentTheme, primaryButton: _saveBtn);
+        if (IsHandleCreated)
+        {
+            ThemeManager.ApplyWindowTitleBarTheme(Handle, _currentTheme);
+        }
+
+        var palette = ThemeManager.GetPalette(_currentTheme);
+        _themeToggleBtn.Text = _currentTheme == AppTheme.Dark ? "Light Mode" : "Dark Mode";
+        _hintLabel.ForeColor = palette.TextSecondary;
+        _installStatusLabel.ForeColor = ResolveStatusColor(_installKind, palette);
+        _statusBarLabel.ForeColor = ResolveStatusColor(_statusKind, palette);
+        RefreshBindingLabels();
+    }
+
+    private static Color ResolveStatusColor(StatusKind kind, ThemePalette p) => kind switch
+    {
+        StatusKind.Success => p.TextSuccess,
+        StatusKind.Warning => p.TextWarning,
+        StatusKind.Danger => p.TextDanger,
+        _ => p.TextSecondary,
+    };
+
+    private void SetStatusMessage(string message, StatusKind kind)
+    {
+        _statusKind = kind;
+        _statusBarLabel.Text = message;
+        _statusBarLabel.ForeColor = ResolveStatusColor(kind, ThemeManager.GetPalette(_currentTheme));
+    }
+
+    private void SetInstallMessage(string message, StatusKind kind)
+    {
+        _installKind = kind;
+        _installStatusLabel.Text = message;
+        _installStatusLabel.ForeColor = ResolveStatusColor(kind, ThemeManager.GetPalette(_currentTheme));
     }
 
     private void AutoDetectEts2AndLoad()
@@ -287,8 +392,9 @@ public sealed class MainForm : Form
         }
         else
         {
-            _installStatusLabel.Text = "ETS2 was not auto-detected — please browse to your bin\\win_x64\\plugins folder.";
-            _installStatusLabel.ForeColor = Color.DarkOrange;
+            SetInstallMessage(
+                "ETS2 was not auto-detected — please browse to your bin\\win_x64\\plugins folder.",
+                StatusKind.Warning);
         }
         RefreshBindingLabels();
     }
@@ -326,16 +432,19 @@ public sealed class MainForm : Form
         var dir = _pluginsPathBox.Text.Trim();
         if (string.IsNullOrEmpty(dir))
         {
-            _installStatusLabel.Text = "No folder selected.";
-            _installStatusLabel.ForeColor = Color.DarkOrange;
+            SetInstallMessage("No folder selected.", StatusKind.Warning);
             return;
         }
 
         var dllExists = File.Exists(Path.Combine(dir, Ets2PathDetector.PluginDllName));
-        _installStatusLabel.Text = dllExists
-            ? "Status: Plugin DLL is installed."
-            : "Status: DLL not installed yet — click 'Install / Update Plugin'.";
-        _installStatusLabel.ForeColor = dllExists ? Color.DarkGreen : Color.DarkOrange;
+        if (dllExists)
+        {
+            SetInstallMessage("Status: Plugin DLL is installed.", StatusKind.Success);
+        }
+        else
+        {
+            SetInstallMessage("Status: DLL not installed yet — click 'Install / Update Plugin'.", StatusKind.Warning);
+        }
     }
 
     private void InstallPlugin()
@@ -370,8 +479,7 @@ public sealed class MainForm : Form
         {
             Ets2PathDetector.InstallPluginFiles(sourceDir, targetDir);
             RefreshInstallStatus();
-            _statusBarLabel.Text = $"Plugin installed successfully to: {targetDir}";
-            _statusBarLabel.ForeColor = Color.DarkGreen;
+            SetStatusMessage($"Plugin installed successfully to: {targetDir}", StatusKind.Success);
         }
         catch (Exception ex)
         {
@@ -383,10 +491,10 @@ public sealed class MainForm : Form
     {
         _captureCts?.Cancel();
         _captureCts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
-        var (lbl, bindBtn, _) = _bindingRows[actionKey];
+        var (lbl, _, _) = _bindingRows[actionKey];
         var oldText = lbl.Text;
         lbl.Text = "Listening... Press any key or button (ESC to cancel)";
-        lbl.ForeColor = Color.DarkRed;
+        lbl.ForeColor = ThemeManager.GetPalette(_currentTheme).TextDanger;
         SetAllBindButtonsEnabled(false);
 
         try
@@ -396,21 +504,18 @@ public sealed class MainForm : Form
             if (captured is not null)
             {
                 SetBinding(actionKey, captured);
-                _statusBarLabel.Text = $"Bound: {captured.ToDisplayText()}";
-                _statusBarLabel.ForeColor = Color.DarkGreen;
+                SetStatusMessage($"Bound: {captured.ToDisplayText()}", StatusKind.Success);
             }
             else
             {
                 lbl.Text = oldText;
-                _statusBarLabel.Text = "Binding capture canceled.";
-                _statusBarLabel.ForeColor = Color.DimGray;
+                SetStatusMessage("Binding capture canceled.", StatusKind.Neutral);
             }
         }
         catch (OperationCanceledException)
         {
             lbl.Text = oldText;
-            _statusBarLabel.Text = "Timed out — no input detected.";
-            _statusBarLabel.ForeColor = Color.DarkOrange;
+            SetStatusMessage("Timed out — no input detected.", StatusKind.Warning);
         }
         finally
         {
@@ -452,11 +557,12 @@ public sealed class MainForm : Form
 
     private void RefreshBindingLabels()
     {
+        var palette = ThemeManager.GetPalette(_currentTheme);
         foreach (var (key, row) in _bindingRows)
         {
             var spec = GetBinding(key);
             row.ValueLabel.Text = spec.ToDisplayText();
-            row.ValueLabel.ForeColor = spec.Source == Models.BindingSource.None ? Color.DimGray : Color.DarkSlateBlue;
+            row.ValueLabel.ForeColor = spec.Source == Models.BindingSource.None ? palette.TextSecondary : palette.TextAccent;
         }
     }
 
@@ -521,8 +627,7 @@ public sealed class MainForm : Form
         try
         {
             _config.Save(iniPath);
-            _statusBarLabel.Text = $"Settings saved ({DateTime.Now:HH:mm:ss}): {iniPath}";
-            _statusBarLabel.ForeColor = Color.DarkGreen;
+            SetStatusMessage($"Settings saved ({DateTime.Now:HH:mm:ss}): {iniPath}", StatusKind.Success);
         }
         catch (Exception ex)
         {

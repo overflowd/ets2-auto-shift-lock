@@ -11,6 +11,7 @@
     <AssemblyName>AutoShiftLockConfig</AssemblyName>
     <RootNamespace>AutoShiftLockConfig</RootNamespace>
     <Version>1.0.0</Version>
+    <ApplicationIcon>..\..\..\assets\app_icon.ico</ApplicationIcon>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
 
