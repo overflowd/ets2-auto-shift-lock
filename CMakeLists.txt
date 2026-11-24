@@ -12,7 +12,9 @@ endif()
 enable_testing()
 
 add_executable(plugin_tests
+    plugin/src/config_store.cpp
     tests/plugin/test_main.cpp
+    tests/plugin/test_config_store.cpp
 )
 target_include_directories(plugin_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/plugin/include
