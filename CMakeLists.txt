@@ -11,6 +11,33 @@ endif()
 
 enable_testing()
 
+add_library(ets2_auto_shift_lock SHARED
+    plugin/src/config_store.cpp
+    plugin/src/shift_lock_engine.cpp
+    plugin/src/audio_alert.cpp
+    plugin/src/input_poller.cpp
+    plugin/src/scs_bridge.cpp
+    plugin/src/dll_main.cpp
+    plugin/exports.def
+)
+set_target_properties(ets2_auto_shift_lock PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "ets2_auto_shift_lock"
+)
+target_include_directories(ets2_auto_shift_lock PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugin/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/scs_sdk/include
+)
+target_link_libraries(ets2_auto_shift_lock PRIVATE winmm user32 dinput8 dxguid)
+
+if(MINGW)
+    target_link_options(ets2_auto_shift_lock PRIVATE
+        -static
+        -static-libgcc
+        -static-libstdc++
+    )
+endif()
+
 add_executable(plugin_tests
     plugin/src/config_store.cpp
     plugin/src/shift_lock_engine.cpp
