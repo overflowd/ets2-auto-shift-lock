@@ -81,7 +81,7 @@ public static class Ets2PathDetector
         var srcDll = Path.Combine(sourcePluginDir, PluginDllName);
         if (!File.Exists(srcDll))
         {
-            throw new FileNotFoundException($"Eklenti DLL dosyası bulunamadı: {srcDll}", srcDll);
+            throw new FileNotFoundException($"Plugin DLL not found: {srcDll}", srcDll);
         }
 
         Directory.CreateDirectory(targetPluginsDir);

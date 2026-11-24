@@ -58,6 +58,9 @@ Copy-Item (Join-Path $publishDir "AutoShiftLockConfig.exe") (Join-Path $stageDir
 Copy-Item (Join-Path $repoRoot "build/ets2_auto_shift_lock.dll") (Join-Path $stageDir "plugin/ets2_auto_shift_lock.dll")
 Copy-Item (Join-Path $repoRoot "assets/lock_warning.wav") (Join-Path $stageDir "plugin/lock_warning.wav")
 Copy-Item (Join-Path $repoRoot "README.md") (Join-Path $stageDir "README.md")
+if (Test-Path (Join-Path $repoRoot "LICENSE")) {
+    Copy-Item (Join-Path $repoRoot "LICENSE") (Join-Path $stageDir "LICENSE")
+}
 
 # Use System.IO.Compression to avoid PowerShell Expand/Compress-Archive console Write-Progress issues
 Add-Type -AssemblyName System.IO.Compression.FileSystem

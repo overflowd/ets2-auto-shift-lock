@@ -151,24 +151,24 @@ public sealed record BindingSpec
 
     public string ToDisplayText() => Source switch
     {
-        BindingSource.None => "Atanmadı",
-        BindingSource.Keyboard => $"Klavye: {FormatVkName(VkCode)} (VK {VkCode})",
+        BindingSource.None => "Unbound",
+        BindingSource.Keyboard => $"Keyboard: {FormatVkName(VkCode)} (VK {VkCode})",
         BindingSource.XInput => $"Gamepad #{XInputSlot + 1}: {XInputButton}",
-        BindingSource.DirectInputButton => $"Direksiyon/Cihaz: Buton {Index + 1} [{ShortGuid(DeviceGuid)}]",
-        BindingSource.DirectInputPov => $"Direksiyon/Cihaz: POV {Index + 1} {PovDirectionToken(PovDir)} [{ShortGuid(DeviceGuid)}]",
-        _ => "Atanmadı",
+        BindingSource.DirectInputButton => $"Wheel/Device: Button {Index + 1} [{ShortGuid(DeviceGuid)}]",
+        BindingSource.DirectInputPov => $"Wheel/Device: POV {Index + 1} {PovDirectionToken(PovDir)} [{ShortGuid(DeviceGuid)}]",
+        _ => "Unbound",
     };
 
     private static string ShortGuid(string guid) => guid.Length >= 8 ? guid[..8] : guid;
 
     private static string FormatVkName(uint vk) => vk switch
     {
-        160 => "Sol Shift",
-        161 => "Sağ Shift",
-        162 => "Sol Ctrl",
-        163 => "Sağ Ctrl",
-        164 => "Sol Alt",
-        165 => "Sağ Alt",
+        160 => "Left Shift",
+        161 => "Right Shift",
+        162 => "Left Ctrl",
+        163 => "Right Ctrl",
+        164 => "Left Alt",
+        165 => "Right Alt",
         _ => ((Keys)vk).ToString(),
     };
 

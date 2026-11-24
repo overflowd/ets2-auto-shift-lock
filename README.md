@@ -1,30 +1,34 @@
-# ETS2 Otomatik Vites Fren Kilidi Eklentisi (Auto Shift-Lock)
+# ETS2 Auto Shift-Lock
 
-Euro Truck Simulator 2 (ETS2) **"Gerçek Otomatik"** (`Real Automatic`) şanzıman modunda, gerçek otomatik vitesli araçlardaki gibi **`D`, `N` ve `R` arasında yalnızca frene basılıyken ve araç tamamen durmuşken** vites değiştirmenize izin veren yerel (native `x64`) ETS2 eklentisi.
+A native Windows (`x64`) plugin for **Euro Truck Simulator 2 (ETS2)** that enforces realistic automatic transmission **shift-lock** behavior in **Real Automatic** mode — allowing transitions between **`D`, `N`, and `R` only while pressing the brake pedal and completely stopped**.
 
-- **Evrensel donanım desteği:** Klavye, Xbox/XInput gamepad (tetikler dahil) ve tüm DirectInput/HID direksiyon setleri ile buton kutuları.
-- **Sıfır arka plan uygulaması & sıfır sanal sürücü:** Oyun sırasında yalnızca ETS2'nin yüklediği `ets2_auto_shift_lock.dll` çalışır (vJoy gerekmez).
-- **Çift vites kontrolü:** Hem sıralı `Vites Yükselt / Düşür` (`R ↔ N ↔ D`) hem de ayrı anlık `D`, `N`, `R` butonlarını destekler.
-- **Akıllı mod algılama:**
-  - **Gerçek Otomatik:** Fren + tam durma kilidi aktif.
-  - **Sıralı (Sequential):** `Vites Yükselt / Düşür` tuşları kilitsiz olarak oyuna iletilir (mod değiştirince yeniden tuş atamanız gerekmez).
-  - **Basit Otomatik / H-Shifter:** Eklenti otomatik olarak pasif kalır.
-- **Sesli uyarı:** Frene basmadan veya araç hareket halindeyken vites değiştirmeye çalışırsanız kilit uyarı sesi çalar.
+## Features
 
-## Kurulum (Son Kullanıcılar)
+- **Universal hardware support:** Works with keyboards, XInput gamepads (including `LT`/`RT` triggers), and all DirectInput/HID steering wheels and button boxes. Brake detection reads directly from ETS2 telemetry, so every brake pedal/key/trigger works out of the box.
+- **Zero background apps & zero virtual drivers:** Runs purely as a native SCS SDK DLL inside ETS2 (`ets2_auto_shift_lock.dll`). No vJoy and no tray app running while you drive.
+- **Dual shifting styles:** Supports both sequential **Shift Up / Shift Down** (`R ↔ N ↔ D`) and dedicated momentary **Drive (`D`) / Neutral (`N`) / Reverse (`R`)** buttons simultaneously.
+- **Smart transmission mode awareness:**
+  - **Real Automatic (`automatic`):** Full brake + complete-stop shift lock active.
+  - **Sequential (`manual`):** Unlocked passthrough for `Shift Up` / `Shift Down` so you never lose shifting when switching to a sequential truck.
+  - **Simple Automatic (`arcade`) & H-Shifter (`hshifter`):** Automatically inactive.
+- **Audio feedback:** Plays a subtle mechanical lock warning sound (`lock_warning.wav`, customizable) whenever a shift is blocked.
+- **Live `.ini` hot-reload:** Changes saved from the configuration tool take effect without restarting ETS2.
 
-1. ZIP arşivini bir klasöre çıkarın ve `AutoShiftLockConfig.exe` uygulamasını açın.
-2. ETS2 `bin\win_x64\plugins` klasörü otomatik algılanır (algılanmazsa **Gözat...** ile seçin).
-3. **Eklentiyi Kur / Güncelle** butonuna basın (`ets2_auto_shift_lock.dll` ve `lock_warning.wav` kopyalanır).
-4. Kullanmak istediğiniz vites tuşlarını (**Vites Yükselt / Düşür** ve/veya **Doğrudan D / N / R**) **Tuşa Basarak Ata** ile tanımlayıp **Ayarları Kaydet** butonuna basın.
-5. **ETS2 içinde tek seferlik ayar:**
-   - **Ayarlar → Kontroller → Şanzıman:** `Gerçek Otomatik` seçin.
-   - **Ayarlar → Tuşlar ve Düğmeler:** ETS2'nin mevcut **Vites Yükselt** ve **Vites Düşür** atamalarını kaldırın (böylece oyun frensiz vites değiştirmez; geçişleri bizim eklentimiz kontrol eder).
-6. ETS2'yi açtığınızda SDK uyarısını onaylayın; oyun oynarken `AutoShiftLockConfig.exe`'nin açık kalmasına gerek yoktur.
+## Installation (End Users)
 
-## Ayar Dosyası (`ets2_auto_shift_lock.ini`)
+1. Download and extract the release ZIP (`ets2-auto-shift-lock-v1.0.0-win-x64.zip`).
+2. Run **`AutoShiftLockConfig.exe`**.
+3. Your ETS2 `bin\win_x64\plugins` folder is auto-detected (or click **Browse...** to select it manually).
+4. Click **Install / Update Plugin** to copy `ets2_auto_shift_lock.dll` and `lock_warning.wav`.
+5. Bind your preferred shift controls (**Shift Up / Shift Down** and/or **Direct D / N / R**) using **Press to Bind**, then click **Save Settings**.
+6. **One-time ETS2 in-game setup:**
+   - Go to **Options → Controls → Transmission** and select **Real Automatic**.
+   - Go to **Options → Keys & Buttons** and **unassign** ETS2's built-in **Shift Up** and **Shift Down** bindings (so the game does not bypass the brake lock).
+7. Launch ETS2 and confirm the SDK plugin prompt. You can close `AutoShiftLockConfig.exe` once configured.
 
-Ayarlar `win_x64\plugins\ets2_auto_shift_lock.ini` dosyasında saklanır ve oyun açıkken değiştirilirse otomatik yeniden yüklenir:
+## Configuration (`ets2_auto_shift_lock.ini`)
+
+Stored next to the DLL in `bin\win_x64\plugins\ets2_auto_shift_lock.ini`:
 
 ```ini
 [thresholds]
@@ -49,12 +53,16 @@ gear_n=
 gear_r=
 ```
 
-## Kaynaktan Derleme
+## Building from Source
 
-Gereksinimler: Windows x64, MinGW-w64 (UCRT x64) veya MSVC + CMake + `.NET 9 SDK`.
+Prerequisites: Windows x64, MinGW-w64 (UCRT x64) or MSVC, CMake, and `.NET 9 SDK`.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/build_release.ps1
 ```
 
-Çıktı paketi `dist/ets2-auto-shift-lock-v1.0.0-win-x64.zip` altında oluşturulur.
+This compiles `ets2_auto_shift_lock.dll`, runs all C++ (`27`) and `.NET` (`11`) unit tests, publishes a self-contained single-file `AutoShiftLockConfig.exe`, and packages everything into `dist/ets2-auto-shift-lock-v1.0.0-win-x64.zip`.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Official SCS Software SDK 1.14 headers in `third_party/scs_sdk/` remain subject to [sdk_license.txt](third_party/scs_sdk/sdk_license.txt).

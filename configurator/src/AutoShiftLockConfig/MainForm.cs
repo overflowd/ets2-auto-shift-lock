@@ -12,9 +12,9 @@ public sealed class MainForm : Form
     private readonly Dictionary<string, (Label ValueLabel, Button BindBtn, Button ClearBtn)> _bindingRows = new();
     private readonly NumericUpDown _brakePctInput = new() { Minimum = 5, Maximum = 100, Value = 25, Width = 75 };
     private readonly NumericUpDown _stopSpeedInput = new() { Minimum = 0.0m, Maximum = 10.0m, DecimalPlaces = 2, Increment = 0.1m, Value = 0.50m, Width = 75 };
-    private readonly ComboBox _brakeSourceCombo = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 170 };
+    private readonly ComboBox _brakeSourceCombo = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 190 };
 
-    private readonly CheckBox _audioEnabledCheck = new() { Text = "Kilitliyken sesli uyarı çal", AutoSize = true, Checked = true };
+    private readonly CheckBox _audioEnabledCheck = new() { Text = "Play warning sound when shift is locked", AutoSize = true, Checked = true };
     private readonly TextBox _soundFileBox = new() { Text = "lock_warning.wav", Anchor = AnchorStyles.Left | AnchorStyles.Right };
     private readonly NumericUpDown _cooldownInput = new() { Minimum = 0, Maximum = 5000, Increment = 50, Value = 350, Width = 75 };
 
@@ -25,7 +25,7 @@ public sealed class MainForm : Form
 
     public MainForm()
     {
-        Text = "ETS2 Otomatik Vites Fren Kilidi — Ayarlar";
+        Text = "ETS2 Auto Shift-Lock — Configuration";
         MinimumSize = new Size(720, 620);
         Size = new Size(760, 660);
         StartPosition = FormStartPosition.CenterScreen;
@@ -60,7 +60,7 @@ public sealed class MainForm : Form
     {
         var grp = new GroupBox
         {
-            Text = "1. ETS2 Eklenti Klasörü ve Kurulum",
+            Text = "1. ETS2 Plugins Folder & Installation",
             Dock = DockStyle.Top,
             AutoSize = true,
             Padding = new Padding(10),
@@ -77,10 +77,10 @@ public sealed class MainForm : Form
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-        var browseBtn = new Button { Text = "Gözat...", AutoSize = true, Padding = new Padding(8, 2, 8, 2) };
+        var browseBtn = new Button { Text = "Browse...", AutoSize = true, Padding = new Padding(8, 2, 8, 2) };
         browseBtn.Click += (_, _) => BrowsePluginsDir();
 
-        var installBtn = new Button { Text = "Eklentiyi Kur / Güncelle", AutoSize = true, Padding = new Padding(8, 2, 8, 2) };
+        var installBtn = new Button { Text = "Install / Update Plugin", AutoSize = true, Padding = new Padding(8, 2, 8, 2) };
         installBtn.Click += (_, _) => InstallPlugin();
 
         _pluginsPathBox.TextChanged += (_, _) => RefreshInstallStatus();
@@ -99,7 +99,7 @@ public sealed class MainForm : Form
     {
         var grp = new GroupBox
         {
-            Text = "2. Vites Tuş / Buton Atamaları (Klavye, Gamepad, Direksiyon)",
+            Text = "2. Shift Bindings (Keyboard, Gamepad, Steering Wheel)",
             Dock = DockStyle.Top,
             AutoSize = true,
             Padding = new Padding(10),
@@ -119,11 +119,11 @@ public sealed class MainForm : Form
 
         var actions = new (string Key, string Label)[]
         {
-            ("shift_up", "Vites Yükselt (R → N → D):"),
-            ("shift_down", "Vites Düşür (D → N → R):"),
-            ("gear_d", "Doğrudan D (İleri):"),
-            ("gear_n", "Doğrudan N (Boş):"),
-            ("gear_r", "Doğrudan R (Geri):"),
+            ("shift_up", "Shift Up (R → N → D):"),
+            ("shift_down", "Shift Down (D → N → R):"),
+            ("gear_d", "Direct Drive (D):"),
+            ("gear_n", "Direct Neutral (N):"),
+            ("gear_r", "Direct Reverse (R):"),
         };
 
         for (int i = 0; i < actions.Length; i++)
@@ -132,14 +132,14 @@ public sealed class MainForm : Form
             var titleLbl = new Label { Text = labelText, AutoSize = true, Anchor = AnchorStyles.Left, Padding = new Padding(0, 6, 0, 0) };
             var valueLbl = new Label
             {
-                Text = "Atanmadı",
+                Text = "Unbound",
                 AutoSize = true,
                 Anchor = AnchorStyles.Left,
                 ForeColor = Color.DarkSlateBlue,
                 Padding = new Padding(0, 6, 0, 0),
             };
-            var bindBtn = new Button { Text = "Tuşa Basarak Ata", AutoSize = true, Padding = new Padding(6, 2, 6, 2) };
-            var clearBtn = new Button { Text = "Temizle", AutoSize = true, Padding = new Padding(6, 2, 6, 2) };
+            var bindBtn = new Button { Text = "Press to Bind", AutoSize = true, Padding = new Padding(6, 2, 6, 2) };
+            var clearBtn = new Button { Text = "Clear", AutoSize = true, Padding = new Padding(6, 2, 6, 2) };
 
             bindBtn.Click += async (_, _) => await CaptureBindingAsync(key);
             clearBtn.Click += (_, _) =>
@@ -164,14 +164,14 @@ public sealed class MainForm : Form
     {
         var grp = new GroupBox
         {
-            Text = "3. Fren ve Durma Eşikleri",
+            Text = "3. Brake & Stop Thresholds",
             Dock = DockStyle.Top,
             AutoSize = true,
             Padding = new Padding(10),
         };
 
-        _brakeSourceCombo.Items.Add("Ayak Freni Pedalı (Önerilen)");
-        _brakeSourceCombo.Items.Add("Efektif Fren");
+        _brakeSourceCombo.Items.Add("Foot Brake Pedal (Recommended)");
+        _brakeSourceCombo.Items.Add("Effective Brake");
         _brakeSourceCombo.SelectedIndex = 0;
 
         var flow = new FlowLayoutPanel
@@ -182,11 +182,11 @@ public sealed class MainForm : Form
             FlowDirection = FlowDirection.LeftToRight,
         };
 
-        flow.Controls.Add(new Label { Text = "Fren eşiği (%):", AutoSize = true, Padding = new Padding(0, 6, 4, 0) });
+        flow.Controls.Add(new Label { Text = "Brake threshold (%):", AutoSize = true, Padding = new Padding(0, 6, 4, 0) });
         flow.Controls.Add(_brakePctInput);
-        flow.Controls.Add(new Label { Text = "Durma toleransı (km/h):", AutoSize = true, Padding = new Padding(14, 6, 4, 0) });
+        flow.Controls.Add(new Label { Text = "Stop tolerance (km/h):", AutoSize = true, Padding = new Padding(14, 6, 4, 0) });
         flow.Controls.Add(_stopSpeedInput);
-        flow.Controls.Add(new Label { Text = "Fren kaynağı:", AutoSize = true, Padding = new Padding(14, 6, 4, 0) });
+        flow.Controls.Add(new Label { Text = "Brake source:", AutoSize = true, Padding = new Padding(14, 6, 4, 0) });
         flow.Controls.Add(_brakeSourceCombo);
 
         grp.Controls.Add(flow);
@@ -197,7 +197,7 @@ public sealed class MainForm : Form
     {
         var grp = new GroupBox
         {
-            Text = "4. Sesli Uyarı",
+            Text = "4. Audio Warning",
             Dock = DockStyle.Top,
             AutoSize = true,
             Padding = new Padding(10),
@@ -215,20 +215,20 @@ public sealed class MainForm : Form
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-        var browseWavBtn = new Button { Text = "WAV Seç...", AutoSize = true };
+        var browseWavBtn = new Button { Text = "Choose WAV...", AutoSize = true };
         browseWavBtn.Click += (_, _) => BrowseWavFile();
 
-        var testBtn = new Button { Text = "Sesi Test Et", AutoSize = true };
+        var testBtn = new Button { Text = "Test Sound", AutoSize = true };
         testBtn.Click += (_, _) => TestWarningSound();
 
         var cooldownPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Left };
         cooldownPanel.Controls.Add(_audioEnabledCheck);
-        cooldownPanel.Controls.Add(new Label { Text = "Tekrar bekleme (ms):", AutoSize = true, Padding = new Padding(16, 4, 4, 0) });
+        cooldownPanel.Controls.Add(new Label { Text = "Cooldown (ms):", AutoSize = true, Padding = new Padding(16, 4, 4, 0) });
         cooldownPanel.Controls.Add(_cooldownInput);
 
         grid.Controls.Add(cooldownPanel, 0, 0);
         grid.SetColumnSpan(cooldownPanel, 4);
-        grid.Controls.Add(new Label { Text = "Ses dosyası:", AutoSize = true, Padding = new Padding(0, 6, 4, 0) }, 0, 1);
+        grid.Controls.Add(new Label { Text = "Sound file:", AutoSize = true, Padding = new Padding(0, 6, 4, 0) }, 0, 1);
         grid.Controls.Add(_soundFileBox, 1, 1);
         grid.Controls.Add(browseWavBtn, 2, 1);
         grid.Controls.Add(testBtn, 3, 1);
@@ -252,7 +252,7 @@ public sealed class MainForm : Form
 
         var hintLabel = new Label
         {
-            Text = "Kurulum hatırlatması: ETS2 Ayarlar → Tuşlar ve Düğmeler'den mevcut Vites Yükselt/Düşür atamalarını kaldırın; vites tipini 'Gerçek Otomatik' seçin.",
+            Text = "Setup reminder: In ETS2 Options → Keys & Buttons, clear your existing Shift Up / Shift Down bindings, and set Transmission to 'Real Automatic'.",
             AutoSize = true,
             MaximumSize = new Size(540, 0),
             ForeColor = Color.FromArgb(60, 60, 60),
@@ -260,7 +260,7 @@ public sealed class MainForm : Form
 
         var saveBtn = new Button
         {
-            Text = "Ayarları Kaydet",
+            Text = "Save Settings",
             AutoSize = true,
             Padding = new Padding(14, 6, 14, 6),
             BackColor = Color.FromArgb(24, 118, 210),
@@ -287,7 +287,7 @@ public sealed class MainForm : Form
         }
         else
         {
-            _installStatusLabel.Text = "ETS2 otomatik bulunamadı — lütfen win_x64\\plugins klasörünü seçin.";
+            _installStatusLabel.Text = "ETS2 was not auto-detected — please browse to your bin\\win_x64\\plugins folder.";
             _installStatusLabel.ForeColor = Color.DarkOrange;
         }
         RefreshBindingLabels();
@@ -297,7 +297,7 @@ public sealed class MainForm : Form
     {
         using var dlg = new FolderBrowserDialog
         {
-            Description = "ETS2 bin\\win_x64\\plugins klasörünü seçin",
+            Description = "Select your ETS2 bin\\win_x64\\plugins folder",
             UseDescriptionForTitle = true,
         };
         if (dlg.ShowDialog(this) == DialogResult.OK)
@@ -326,15 +326,15 @@ public sealed class MainForm : Form
         var dir = _pluginsPathBox.Text.Trim();
         if (string.IsNullOrEmpty(dir))
         {
-            _installStatusLabel.Text = "Klasör seçilmedi.";
+            _installStatusLabel.Text = "No folder selected.";
             _installStatusLabel.ForeColor = Color.DarkOrange;
             return;
         }
 
         var dllExists = File.Exists(Path.Combine(dir, Ets2PathDetector.PluginDllName));
         _installStatusLabel.Text = dllExists
-            ? "Durum: Eklenti DLL kurulu."
-            : "Durum: DLL henüz kurulu değil — 'Eklentiyi Kur / Güncelle' butonuna basın.";
+            ? "Status: Plugin DLL is installed."
+            : "Status: DLL not installed yet — click 'Install / Update Plugin'.";
         _installStatusLabel.ForeColor = dllExists ? Color.DarkGreen : Color.DarkOrange;
     }
 
@@ -343,7 +343,7 @@ public sealed class MainForm : Form
         var targetDir = _pluginsPathBox.Text.Trim();
         if (string.IsNullOrEmpty(targetDir))
         {
-            MessageBox.Show(this, "Lütfen önce ETS2 plugins klasörünü seçin.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, "Please select your ETS2 plugins folder first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
@@ -359,8 +359,8 @@ public sealed class MainForm : Form
         {
             MessageBox.Show(
                 this,
-                $"Eklenti dosyası ({Ets2PathDetector.PluginDllName}) uygulama yanındaki 'plugin' klasöründe bulunamadı.",
-                "Hata",
+                $"Plugin file ({Ets2PathDetector.PluginDllName}) was not found in the 'plugin' folder next to this app.",
+                "Error",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
             return;
@@ -370,12 +370,12 @@ public sealed class MainForm : Form
         {
             Ets2PathDetector.InstallPluginFiles(sourceDir, targetDir);
             RefreshInstallStatus();
-            _statusBarLabel.Text = $"Eklenti başarıyla kuruldu: {targetDir}";
+            _statusBarLabel.Text = $"Plugin installed successfully to: {targetDir}";
             _statusBarLabel.ForeColor = Color.DarkGreen;
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"Kurulum hatası: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"Installation failed: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -385,7 +385,7 @@ public sealed class MainForm : Form
         _captureCts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
         var (lbl, bindBtn, _) = _bindingRows[actionKey];
         var oldText = lbl.Text;
-        lbl.Text = "Bekleniyor... Bir tuşa/butona basın (İptal: ESC)";
+        lbl.Text = "Listening... Press any key or button (ESC to cancel)";
         lbl.ForeColor = Color.DarkRed;
         SetAllBindButtonsEnabled(false);
 
@@ -396,20 +396,20 @@ public sealed class MainForm : Form
             if (captured is not null)
             {
                 SetBinding(actionKey, captured);
-                _statusBarLabel.Text = $"Atandı: {captured.ToDisplayText()}";
+                _statusBarLabel.Text = $"Bound: {captured.ToDisplayText()}";
                 _statusBarLabel.ForeColor = Color.DarkGreen;
             }
             else
             {
                 lbl.Text = oldText;
-                _statusBarLabel.Text = "Tuş atama iptal edildi.";
+                _statusBarLabel.Text = "Binding capture canceled.";
                 _statusBarLabel.ForeColor = Color.DimGray;
             }
         }
         catch (OperationCanceledException)
         {
             lbl.Text = oldText;
-            _statusBarLabel.Text = "Süre doldu, tuş algılanmadı.";
+            _statusBarLabel.Text = "Timed out — no input detected.";
             _statusBarLabel.ForeColor = Color.DarkOrange;
         }
         finally
@@ -464,8 +464,8 @@ public sealed class MainForm : Form
     {
         using var dlg = new OpenFileDialog
         {
-            Filter = "WAV Ses Dosyası (*.wav)|*.wav|Tüm Dosyalar (*.*)|*.*",
-            Title = "Uyarı Sesi Seç",
+            Filter = "WAV Audio Files (*.wav)|*.wav|All Files (*.*)|*.*",
+            Title = "Choose Warning Sound",
         };
         if (dlg.ShowDialog(this) == DialogResult.OK)
         {
@@ -506,7 +506,7 @@ public sealed class MainForm : Form
         var dir = _pluginsPathBox.Text.Trim();
         if (string.IsNullOrEmpty(dir))
         {
-            MessageBox.Show(this, "Ayarları kaydetmek için önce ETS2 plugins klasörünü seçin.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, "Please select your ETS2 plugins folder before saving.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
@@ -521,12 +521,12 @@ public sealed class MainForm : Form
         try
         {
             _config.Save(iniPath);
-            _statusBarLabel.Text = $"Ayarlar kaydedildi ({DateTime.Now:HH:mm:ss}): {iniPath}";
+            _statusBarLabel.Text = $"Settings saved ({DateTime.Now:HH:mm:ss}): {iniPath}";
             _statusBarLabel.ForeColor = Color.DarkGreen;
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"Kaydetme hatası: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"Failed to save settings: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

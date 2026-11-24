@@ -27,7 +27,7 @@
   - DirectInput button: `dinput:<PRODUCT_GUID_UPPERCASE_HYPHENATED>:btn:<0_based_index>`
   - DirectInput POV: `dinput:<PRODUCT_GUID_UPPERCASE_HYPHENATED>:pov:<0_based_index>:<UP|RIGHT|DOWN|LEFT>`
 - Release distribution: single ZIP containing self-contained `AutoShiftLockConfig.exe` + `plugin/ets2_auto_shift_lock.dll` + `plugin/lock_warning.wav`.
-- Configurator UI strings in Turkish matching user language.
+- Configurator UI strings in English.
 
 ## Review Focus
 
@@ -508,12 +508,12 @@ Expected: PASS.
 
 - [ ] **Step 5: Implement `UniversalInputCapture.cs`, `MainForm.cs`, and `Program.cs`**
 
-Build clean Turkish WinForms UI (`ETS2 Otomatik Vites Fren Kilidi — Ayarlar`):
-- **Kurulum bölümü:** Algılanan ETS2 `win_x64\plugins` yolu + Gözat + **"Eklentiyi Kur / Güncelle"** butonu + kurulu durum etiketi.
-- **Tuş / Buton Atamaları bölümü:** 5 satır (`Vites Yükselt (R→N→D)`, `Vites Düşür (D→N→R)`, `Doğrudan D (İleri)`, `Doğrudan N (Boş)`, `Doğrudan R (Geri)`); her satırda okunabilir atama etiketi, **"Tuşa Basarak Ata"** (3–5 sn dinleme / ESC ile iptal) ve **"Temizle"** düğmesi.
-- **Kilit Eşikleri bölümü:** Fren eşiği (`%5–100`, varsayılan `%25`), Durma hızı toleransı (`0.0–10.0 km/h`, varsayılan `0.5`), Fren kaynağı (`Ayak Freni Pedalı` / `Efektif Fren`).
-- **Sesli Uyarı bölümü:** Aktif kutucuğu, `.wav` dosya yolu + Gözat, Bekleme süresi (`ms`), **"Sesi Test Et"** düğmesi.
-- **Alt bar:** Kısa kurulum hatırlatması (*"ETS2 Ayarlar → Tuşlar ve Düğmeler'den mevcut Vites Yükselt/Düşür tuşlarını kaldırın, vites tipini 'Gerçek Otomatik' seçin."*) + **"Ayarları Kaydet"** düğmesi.
+Build clean English WinForms UI (`ETS2 Auto Shift-Lock — Configuration`):
+- **Installation section:** Auto-detected ETS2 `win_x64\plugins` path + Browse + **"Install / Update Plugin"** button + installed status label.
+- **Shift Bindings section:** 5 rows (`Shift Up (R → N → D)`, `Shift Down (D → N → R)`, `Direct Drive (D)`, `Direct Neutral (N)`, `Direct Reverse (R)`); each row has a human-readable binding label, **"Press to Bind"** (8 s listen / ESC cancel), and **"Clear"** button.
+- **Thresholds section:** Brake threshold (`5–100%`, default `25%`), Stop tolerance (`0.0–10.0 km/h`, default `0.5`), Brake source (`Foot Brake Pedal` / `Effective Brake`).
+- **Audio Warning section:** Enable checkbox, `.wav` file path + Browse, Cooldown (`ms`), **"Test Sound"** button.
+- **Footer:** Quick setup reminder (*"In ETS2 Options → Keys & Buttons, clear your existing Shift Up / Shift Down bindings, and set Transmission to 'Real Automatic'."*) + **"Save Settings"** button.
 
 - [ ] **Step 6: Write `scripts/build_release.ps1` and `README.md`, then run end-to-end build & package verification**
 
